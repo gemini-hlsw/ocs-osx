@@ -1,0 +1,39 @@
+*.class
+*.log
+*.swp
+.#*
+*.iml
+.metals/
+.DS_Store
+*.pem
+*.der
+*.p12
+*.pkcs12
+*.jks
+yarn.lock
+.tags*
+.java-version
+.metals/
+.bloop/
+project/project/.bloop/
+project/metals.sbt
+
+# sbt specific
+.cache
+.history
+.lib/
+target/
+project/plugins/project/
+
+# OS X
+.DS_Store
+
+# Tags
+.tags
+GPATH
+GRTAGS
+GTAGS
+
+archive
+smartgcal
+.jvmopts
