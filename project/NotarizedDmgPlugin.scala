@@ -21,6 +21,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
   object autoImport {
     val NotarizedDmgFormat = config("notarizedDmgFormat")
     val logger = taskKey[SbtLogger]("Holds instance of SomeClassThatNeedsLogger")
+    val id = taskKey[String]("Apple bundle id")
   }
 
   import autoImport._
@@ -30,6 +31,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
     // define a custom target directory
     target := target.value / "dmg",
     name := (name in Universal).value,
+    mainClass := (mainClass in Compile).value,
     mappings := (mappings in Universal).value,
     packageName := (packageName in Universal).value,
     logger := new SbtLogger(streams.value.log),
@@ -37,7 +39,11 @@ object NotarizedDmgPlugin extends AutoPlugin {
     // implementing the packageBin task
     packageBin := {
       val t = target.value
-      val dmg = new File(t, (name.value + ".dmg"))
+      val dmgName = name.value.replaceAll(" ", "_")
+      val dmg = new File(t, (dmgName + ".dmg"))
+      val log = logger.value
+      log.info(s"Creating dmg $dmg")
+      if (dmg.exists) IO.delete(dmg)
 
       if (!t.isDirectory) IO.createDirectory(t)
       val sizeBytes =
@@ -47,7 +53,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
 
       // Create the DMG file:
       sys.process.Process.apply(
-          command = Seq[String]("hdiutil", "create", "-megabytes", "%d" format neededMegabytes, "-fs", "HFS+", "-volname", name.value, name.value),
+          command = Seq[String]("hdiutil", "create", "-megabytes", "%d" format neededMegabytes, "-fs", "HFS+", "-volname",dmgName, dmgName),
           cwd = t
         ).! match {
         case 0 => ()
@@ -55,13 +61,20 @@ object NotarizedDmgPlugin extends AutoPlugin {
       }
 
       // Now mount the DMG.
-      val mountPoint = (t / name.value)
+      val mountPoint = (t / dmgName)
       if (!mountPoint.isDirectory) IO.createDirectory(mountPoint)
       val mountedPath = mountPoint.getAbsolutePath
       sys.process.Process(Seq[String]("hdiutil", "attach", dmg.getAbsolutePath, "-readwrite", "-mountpoint", mountedPath), t).! match {
         case 0 => ()
         case n => sys.error("Unable to mount dmg: " + dmg + ". Exit code " + n)
       }
+
+      IO.write(new File(mountedPath, "PkgInfo"), "APPL????")
+      val regex = """(\w*).*""".r
+      // regex.
+      val pList = InfoPlist(id.value, name.value, version.value, version.value, mainClass.value.getOrElse(sys.error("Sbt main class required")), Map.empty, Seq.empty, None, "")
+      IO.write(new File(mountedPath, "Info.plist"), pList.xml.toString)
+      log.info(pList.xml.toString)
 
       // Now copy the files in
       val m2 = mappings.value map { case (f, p) => f -> (mountPoint / p) }
@@ -81,18 +94,6 @@ object NotarizedDmgPlugin extends AutoPlugin {
       // Delete mount point
       IO.delete(mountPoint)
       dmg
-        // val fileMappings = mappings.value
-        // println(packageName.value)
-        // println(fileMappings)
-        // val dmg = target.value / s"${name.value}.dmg"
-        // // create the is with the mappings. Note this is not the ISO format -.-
-        // IO.write(dmg, "# Filemappings\n")
-        // logger.value.info(s"Write dmg $dmg")
-        // // append all mappings to the list
-        // fileMappings foreach {
-        //     case (file, name) => IO.append(dmg, s"${file.getAbsolutePath}\t$name${IO.Newline}")
-        // }
-        // dmg
     }
   ))
 }

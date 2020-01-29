@@ -1,3 +1,5 @@
+import NativePackagerHelper._
+
 name in ThisBuild := "ocs-osx"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
@@ -24,29 +26,25 @@ val root = project
 lazy val pit = project
   .in(file("pit"))
   .enablePlugins(NotarizedDmgPlugin)
-  // .enablePlugins(JavaAppPackaging)
-    // .settings(NativePackagerKeys.packageArchetype.java_server:_*)
-      .settings(
+  .settings(
+    version := "2020102.1.0",
     libraryDependencies ++= Seq(
-      "edu.gemini.ocs" %% "edu-gemini-pit-launcher" % "2020102.1.0",
+      "edu.gemini.ocs" %% "edu-gemini-pit-launcher" % version.value,
       "org.osgi" % "org.osgi.core" % "4.2.0"
     ),
     name in Universal := "Gemini PIT",
     maintainer in Universal := "Gemini Software Group",
     mappings in (Compile, packageDoc) := Seq(),
     mainClass in Compile := Some("edu.gemini.pit.launcher.PITLauncher"),
-    // universalArchiveOptions in (Universal, packageOsxDmg) := Seq("--verbose"),
-     // packageBin in NotarizedFormat := {
-     //        // val fileMappings = (mappings in Universal).value
-     //        // // val output = target.value / s"${packageName.value}.txt"
-     //        // val output = target.value / s"test.txt"
-     //        // // create the is with the mappings. Note this is not the ISO format -.-
-     //        // IO.write(output, "# Filemappings\n")
-     //        // // append all mappings to the list
-     //        // fileMappings foreach {
-     //        //     case (file, name) => IO.append(output, s"${file.getAbsolutePath}\t$name${IO.Newline}")
-     //        // }
-
-     //        ???
-     //    }
+    id := "edu.gemini.pit",
+    mappings in Universal ++= {
+      val jresDir = Path.userHome / ".jres13"
+      val osxJre = jresDir.toPath.resolve("jre")
+      directory(osxJre.toFile).map { j =>
+        j._1 -> j._2
+      }
+    },
+    javaOptions in Universal ++= Seq(
+      "-java-home ${app_home}/../jre/Contents/Home"
+    )
   )
