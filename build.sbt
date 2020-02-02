@@ -12,13 +12,9 @@ description := "MacOS builder of legacy OT apps"
 
 homepage := Some(url("https://github.com/gemini-hlsw/ocs-osx"))
 
-licenses := Seq(
-  "BSD 3-Clause License" -> url(
-    "https://opensource.org/licenses/BSD-3-Clause"))
+licenses := Seq("BSD 3-Clause License" -> url("https://opensource.org/licenses/BSD-3-Clause"))
 
-addCommandAlias(
-  "pitDmg",
-  "; pit/clean; pit/universal:packageOsxDmg")
+addCommandAlias("pitDmg", "; pit/clean; pit/universal:packageOsxDmg")
 
 val root = project
   .aggregate(pit)
@@ -39,29 +35,26 @@ lazy val pit = project
     id := "edu.gemini.pit",
     signatureID := "T87F4ZD75E",
     certificateHash := "60464455CE099B3293643BC0021D1F25D2F52A59",
+    notarizationUID := "its@gemini.edu",
+    icon := "PIT.icns",
     mappings in Universal ++= {
       val jresDir = Path.userHome / ".jres13"
-      val osxJre = jresDir.toPath.resolve("jre")
+      val osxJre  = jresDir.toPath.resolve("jre")
       directory(osxJre.toFile).map { j =>
         j._1 -> j._2
       }
     },
-    // mappings in Universal ++= {
-    //   val jresDir = Path.userHome / ".jres13"
-    //   val osxJre = jresDir.toPath.resolve("jre")
-    //   directory(osxJre.toFile).map { j =>
-    //     j._1 -> j._2
-      // }
-    // },
     mappings in Universal := {
-      // filter out sjs jar files. otherwise it could generate some conflicts
+      // Move the launcher to the MacOS dir
       val universalMappings = (mappings in Universal).value
-    //  println(universalMappings)
-     val filtered = universalMappings.map {
-       case (n, name) if name.startsWith("bin") => (n, name.replace("bin", "MacOS"))
-       case x => x
-     }
-     filtered
+      val filtered = universalMappings.map {
+        case (n, name) if name.startsWith("bin") => (n, name.replace("bin", "MacOS"))
+        case x                                   => x
+      }
+      filtered
+    },
+    mappings in Universal ++= (resources in Compile).value.map { r =>
+      r -> ("Resources/" + r.getName)
     },
     javaOptions in Universal ++= Seq(
       "-no-version-check",

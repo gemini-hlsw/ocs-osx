@@ -27,9 +27,10 @@ object NotarizedDmgPlugin extends AutoPlugin {
     val logger             = taskKey[SbtLogger]("Holds instance of SomeClassThatNeedsLogger")
     val id                 = taskKey[String]("Apple bundle id")
     val appName            = taskKey[String]("App public name")
-    // val executableScriptName = taskKey[String]("Name of the executable script")
-    val signatureID     = taskKey[String]("Apple signature ID")
-    val certificateHash = taskKey[String]("Apple Certificate Hash")
+    val signatureID        = taskKey[String]("Apple signature ID")
+    val certificateHash    = taskKey[String]("Apple Certificate Hash")
+    val notarizationUID    = taskKey[String]("Notarization UID")
+    val icon               = taskKey[String]("Icon")
   }
 
   import autoImport._
@@ -57,6 +58,8 @@ object NotarizedDmgPlugin extends AutoPlugin {
           val versionY        = version.value
           val executable      = executableScriptName.value
           val projectName     = name.value.replaceAll(" ", "_")
+          val notUID          = notarizationUID.value
+          val iconFile        = new File("Resources", icon.value)
           val dmgName         = s"${projectName}_$versionY"
           val dmg             = new File(t, (dmgName + ".dmg"))
           val entitlements =
@@ -88,7 +91,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
             mainClass.value.getOrElse(sys.error("Sbt main class required")),
             Map.empty,
             Seq.empty,
-            None,
+            Some(iconFile),
             ""
           )
           pList.write(new File(contentPath, "Info.plist").getAbsolutePath)
@@ -166,7 +169,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
                                 "altool",
                                 "--list-providers",
                                 "-u",
-                                """"its@gemini.edu"""",
+                                notUID,
                                 "-p",
                                 """@keychain:AC_PASSWORD""")
           val canNotarize = notarizeCmd.lineStream.filter(_.contains("Error")).isEmpty
@@ -178,7 +181,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
               "--primary-bundle-id",
               bundleId,
               "-u",
-              """"its@gemini.edu"""",
+              notUID,
               "-p",
               """@keychain:AC_PASSWORD""",
               "-f",
