@@ -1,15 +1,19 @@
 import sbt._
 import sbt.Keys._
-import com.typesafe.sbt.packager.Keys.packageName
+import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
+import java.nio.file.{Paths, Files, SimpleFileVisitor, FileVisitResult, Path, FileSystems}
+import java.nio.file.attribute.BasicFileAttributes
+import sys.process._
 
 object NotarizedDmgPlugin extends AutoPlugin {
 
   class SbtLogger(logger: Logger) {
-    def info(s: String): Unit = {
+    def info(s: String): Unit =
       logger.info(s)
-    }
+    def error(s: String): Unit =
+      logger.error(s)
   }
   // enable this plugin when all requirements are fullfilled (in this case JavaAppPackaging has been loaded)
   override def trigger = AllRequirements
@@ -22,6 +26,10 @@ object NotarizedDmgPlugin extends AutoPlugin {
     val NotarizedDmgFormat = config("notarizedDmgFormat")
     val logger = taskKey[SbtLogger]("Holds instance of SomeClassThatNeedsLogger")
     val id = taskKey[String]("Apple bundle id")
+    val appName = taskKey[String]("App public name")
+    // val executableScriptName = taskKey[String]("Name of the executable script")
+    val signatureID = taskKey[String]("Apple signature ID")
+    val certificateHash = taskKey[String]("Apple Certificate Hash")
   }
 
   import autoImport._
@@ -30,7 +38,10 @@ object NotarizedDmgPlugin extends AutoPlugin {
   override def projectSettings = inConfig(NotarizedDmgFormat)(Seq(
     // define a custom target directory
     target := target.value / "dmg",
-    name := (name in Universal).value,
+    name := name.value,
+    executableScriptName := executableScriptName.value,
+    appName := appName.value,
+    version := version.value,
     mainClass := (mainClass in Compile).value,
     mappings := (mappings in Universal).value,
     packageName := (packageName in Universal).value,
@@ -39,45 +50,39 @@ object NotarizedDmgPlugin extends AutoPlugin {
     // implementing the packageBin task
     packageBin := {
       val t = target.value
-      val dmgName = name.value.replaceAll(" ", "_")
+      val bundleId = id.value
+      val certHash = certificateHash.value
+      val applicationName = appName.value
+      val versionY = version.value
+      val executable = executableScriptName.value
+      val projectName = name.value.replaceAll(" ", "_")
+      val dmgName = s"${projectName}_$versionY"
       val dmg = new File(t, (dmgName + ".dmg"))
+      val entitlements = Paths.get(getClass.getClassLoader.getResource("entitlements.plist").toURI).toFile
       val log = logger.value
-      log.info(s"Creating dmg $dmg")
+      log.info(s"Creating dmg $applicationName $versionY")
+      val fullName = s"$applicationName $versionY"
+      val dmgPath = new File(t, fullName)
       if (dmg.exists) IO.delete(dmg)
 
       if (!t.isDirectory) IO.createDirectory(t)
+      IO.delete(dmgPath)
+      IO.createDirectory(dmgPath)
       val sizeBytes =
         mappings.value.map(_._1).filterNot(_.isDirectory).map(_.length).sum
       // We should give ourselves a buffer....
       val neededMegabytes = math.ceil((sizeBytes * 1.05) / (1024 * 1024)).toLong
 
-      // Create the DMG file:
-      sys.process.Process.apply(
-          command = Seq[String]("hdiutil", "create", "-megabytes", "%d" format neededMegabytes, "-fs", "HFS+", "-volname",dmgName, dmgName),
-          cwd = t
-        ).! match {
-        case 0 => ()
-        case n => sys.error("Error creating dmg: " + dmg + ". Exit code " + n)
-      }
+     // Create the DMG file:
+      val contentPath = dmgPath / "Contents"
 
-      // Now mount the DMG.
-      val mountPoint = (t / dmgName)
-      if (!mountPoint.isDirectory) IO.createDirectory(mountPoint)
-      val mountedPath = mountPoint.getAbsolutePath
-      sys.process.Process(Seq[String]("hdiutil", "attach", dmg.getAbsolutePath, "-readwrite", "-mountpoint", mountedPath), t).! match {
-        case 0 => ()
-        case n => sys.error("Unable to mount dmg: " + dmg + ". Exit code " + n)
-      }
-
-      IO.write(new File(mountedPath, "PkgInfo"), "APPL????")
-      val regex = """(\w*).*""".r
-      // regex.
-      val pList = InfoPlist(id.value, name.value, version.value, version.value, mainClass.value.getOrElse(sys.error("Sbt main class required")), Map.empty, Seq.empty, None, "")
-      IO.write(new File(mountedPath, "Info.plist"), pList.xml.toString)
+      IO.write(new File(contentPath, "PkgInfo"), "APPL????")
+      val pList = InfoPlist(executable, bundleId, applicationName, version.value, version.value, mainClass.value.getOrElse(sys.error("Sbt main class required")), Map.empty, Seq.empty, None, "")
+      pList.write(new File(contentPath, "Info.plist").getAbsolutePath)
       log.info(pList.xml.toString)
 
       // Now copy the files in
-      val m2 = mappings.value map { case (f, p) => f -> (mountPoint / p) }
+      val m2 = mappings.value map { case (f, p) => f -> (contentPath / p) }
       IO.copy(m2)
       // Update for permissions
       for {
@@ -85,14 +90,44 @@ object NotarizedDmgPlugin extends AutoPlugin {
         if from.canExecute()
       } to.setExecutable(true, true)
 
-      // Now unmount
-      sys.process.Process(Seq("hdiutil", "detach", mountedPath), target.value).! match {
-        case 0 => ()
-        case n =>
-          sys.error("Unable to dismount dmg: " + dmg + ". Exit code " + n)
+      val identities = Seq("security", "find-identity", "-v", "-p", "codesigning")
+      val canSign = identities.lineStream.exists(_.contains(signatureID.value))
+      if (canSign) {
+        log.info("Signing code with developer ID")
+        // Sign each jar and dylib file
+        Files.walkFileTree(dmgPath.toPath, new SimpleFileVisitor[Path]() {
+          override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+            Seq("codesign", "-f", "--options", "runtime", "--timestamp", "--entitlements", entitlements.getAbsolutePath(), "-v", "-s", certHash, file.toFile.getAbsolutePath).!
+            FileVisitResult.CONTINUE
+          }
+        })
+
       }
+
+    val volname = "%s_%s".format(projectName, versionY)
+    val dmgname = volname + ".dmg"
+    val dest = new File(t, dmgname)
+    if (dest.exists) IO.delete(dest)
+    val args = Seq("hdiutil", "create", "-size", "500m", "-srcfolder", dmgPath.getAbsolutePath, "-volname", volname, dest.getAbsolutePath)
+    val result = args.!
+    if (result != 0) {
+      log.error("*** " + args.mkString(" "))
+      log.error("*** HDIUTIL RETURNED " + result)
+    }
+
       // Delete mount point
-      IO.delete(mountPoint)
+      IO.delete(dmgPath)
+      if (canSign) {
+        Seq("codesign", "-f", "--options", "runtime", "--timestamp", "-v", "-s", certHash, dest.getAbsolutePath).lineStream.foreach(println)
+
+      }
+       val notarizeCmd = Seq("xcrun", "altool", "--list-providers", "-u", """"its@gemini.edu"""", "-p", """@keychain:AC_PASSWORD""")
+       val canNotarize = notarizeCmd.lineStream.filter(_.contains("Error")).isEmpty
+       if (canNotarize) {
+        val notarize = Seq("xcrun", "altool", "--notarize-app", "--primary-bundle-id", bundleId, "-u", """"its@gemini.edu"""", "-p", """@keychain:AC_PASSWORD""", "-f", dmg.getAbsolutePath)
+         notarize.lineStream.foreach(log.info(_))
+       }
+
       dmg
     }
   ))

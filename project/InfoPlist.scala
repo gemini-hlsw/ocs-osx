@@ -7,13 +7,13 @@ object InfoPlist {
   val docType = DocType("plist", extId, Nil)
 }
 
-case class InfoPlist(id: String, name: String, version: String, shortVersion: String, mainClass: String, props: Map[String, String], vmOpts: Seq[String], icon: Option[File], jreDir: String) {
+case class InfoPlist(executable: String, id: String, name: String, version: String, shortVersion: String, mainClass: String, props: Map[String, String], vmOpts: Seq[String], icon: Option[File], jreDir: String) {
 
-        // <key>CFBundleExecutable</key>
-        // <string>{MacDistHandler.launcher}</string>
   def xml =
     <plist version="1.0">
       <dict>
+        <key>CFBundleExecutable</key>
+        <string>{executable}</string>
           {(icon map { f =>
               <key>CFBundleIconFile</key>
               <string>{f.getName}</string>
@@ -57,4 +57,9 @@ case class InfoPlist(id: String, name: String, version: String, shortVersion: St
         <true/>
       </dict>
     </plist>
+
+  def write(file: String) {
+    XML.save(file, xml, "UTF-8", true, InfoPlist.docType)
+  }
 }
+
