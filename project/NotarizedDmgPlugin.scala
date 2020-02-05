@@ -76,7 +76,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
           val sizeBytes =
             mappings.value.map(_._1).filterNot(_.isDirectory).map(_.length).sum
           // We should give ourselves a buffer....
-          val neededMegabytes = math.ceil((sizeBytes * 1.05) / (1024 * 1024)).toLong
+          val neededMegabytes = math.ceil((sizeBytes * 1.5) / (1024 * 1024)).toLong
 
           // Create the DMG file:
           val contentPath = dmgPath / "Contents"
@@ -139,7 +139,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
           val args = Seq("hdiutil",
                          "create",
                          "-size",
-                         "500m",
+                         s"${neededMegabytes}m",
                          "-srcfolder",
                          dmgPath.getAbsolutePath,
                          "-volname",
