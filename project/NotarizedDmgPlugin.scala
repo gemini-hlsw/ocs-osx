@@ -92,7 +92,6 @@ object NotarizedDmgPlugin extends AutoPlugin {
             Some(iconFile)
           )
           pList.write(new File(contentPath, "Info.plist").getAbsolutePath)
-          log.info(pList.xml.toString)
 
           // Now copy the files in
           val m2 = mappings.value.map { case (f, p) => f -> (contentPath / p) }
@@ -159,7 +158,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
                 "-v",
                 "-s",
                 certHash,
-                dest.getAbsolutePath).lineStream.foreach(println)
+                dest.getAbsolutePath).lineStream.foreach(log.info)
 
           }
           val notarizeCmd = Seq("xcrun",
