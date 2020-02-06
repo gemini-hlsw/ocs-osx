@@ -1,4 +1,4 @@
-@ OCS OSX
+# OCS OSX
 This project is meant to build notarized versions of the PIT/OT/QPT distributions for MacOS
 
 Notarization is required by Apple starting on Feb 3rd 2020 and it means applications
@@ -84,6 +84,25 @@ on the example for the PIT
 
 Other JVM arguments can be passed as for any java application
 
+# Notarization
+
+The task will send the code to be notarized and it will uplooad the code and give a reference UUID like
+
+``````
+[info] RequestUUID = bb2ba1c8-250c-4059-881c-d478db8b2e42``
+``````
+
+The notarization process takes a few minutes and ideally we'd check this later on with the command
+
+``````
+xcrun altool --notarization-info  2aa00d95-9348-4205-b4d6-ce70439db87d -u "its@gemini.edu" -p "@keychain:AC_PASSWORD"
+``````
+
+A final step of stapling the dmg is possible (though not required) to let users without internet open the app
+
+``````
+xcrun stapler staple "<DmgPath>.dmg"
+``````
 # Some useful links
 https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
 

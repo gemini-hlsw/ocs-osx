@@ -158,7 +158,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
                 "-v",
                 "-s",
                 certHash,
-                dest.getAbsolutePath).lineStream.foreach(log.info)
+                dest.getAbsolutePath).lineStream
 
           }
           val notarizeCmd = Seq("xcrun",
