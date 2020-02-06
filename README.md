@@ -1,16 +1,18 @@
+@ OCS OSX
 This project is meant to build notarized versions of the PIT/OT/QPT distributions for MacOS
-
-Ideally this would be integrated into the OCS build but given how old the current build is,
-and the complexities due to OSGi, it is easier to do the build of the DMGs separately.
 
 Notarization is required by Apple starting on Feb 3rd 2020 and it means applications
 not distrubiuted over the AppStore need to be signed and sent to apple for notarization.
 
 Otherwise it will be harder to install these applications on Catalina starting on Feb 3rd.
 
+Ideally this would be integrated into the OCS build but given how old and complex the current
+build is (mainly due to OSGi), it is easier to do the build of the DMGs separately. Nonetheless
+it maybe possible to add this build to ocs given enough time and interest
+
 # JRE
 
-We have always embedded a jvm into our dmgs to avoid issues when users use their own jvm.
+We have always embedded a jre into our dmgs to avoid issues when users use their own jvm.
 Unfortunately not every JDK can be notarized, in particular JDK 1.8 cannot be notarized as the
 toolchain used to build it is too old.
 
@@ -28,7 +30,7 @@ AdoptOpenJDK lets you freely distribute the JRE without worries about licensing
 
 The JRE comes in a zip with a root directory, you need to unzip and copy the contents to the dir:
 
-$HOME/.jres13/jre
+``$HOME/.jres13/jre``
 
 Note that the top dir under jre must be `Contents`
 
@@ -42,14 +44,25 @@ of extra code and it is enough to just declare `pitlauncher` as a dependency.
 Note this assumes all modules have been properly published, either locally or to some public repo.
 All testing has been done with local publication
 
+# Code changes
+Given the ocs code is written on jdk 1.8 but runs on jdk 13, there can be code incompatibilities due
+to deprecated code or newer bugs:
+The following have been identified so far:
+
+* Apple custom ui classes (eawt) have been deprecated. They were called via reflection originally thus
+it is not a real issue
+* Legacy actors: Scala actors won't run on jdks newer than 1.8, the code needs to be rewritten
+
 # Signatures and app passwords
 
 All code need to be signed, you need to import the public key and certificate into your keychain
+
 https://github.com/gemini-hlsw/ocs/wiki/Signing-Applications-for-OSX#install-certificate
 
 The certificate is managed by ITS and they can provide a copy if needed
 
 Additionally an app password needs to be on the keychain according to
+
 https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution/customizing_the_notarization_workflow
 
 The password is available at the interal password site
@@ -63,6 +76,7 @@ notarize it, it can be called via e.g.
 For the particular case of the pit an alias has been created `pitDmg`
 
 Mappings and settings can be configured as usual for a Java Application, see:
+
 https://sbt-native-packager.readthedocs.io/en/latest/archetypes/java_app/index.html
 
 Please note that the dock:icon and dock:name require special settings that you can see
@@ -70,8 +84,11 @@ on the example for the PIT
 
 Other JVM arguments can be passed as for any java application
 
-Some useful links:
+# Some useful links
 https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
+
 https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution/customizing_the_notarization_workflow
+
+
 https://sbt-native-packager.readthedocs.io/en/latest/index.html
 
