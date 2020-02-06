@@ -95,7 +95,7 @@ The task will send the code to be notarized and it will uplooad the code and giv
 The notarization process takes a few minutes and ideally we'd check this later on with the command
 
 ``````
-xcrun altool --notarization-info  2aa00d95-9348-4205-b4d6-ce70439db87d -u "its@gemini.edu" -p "@keychain:AC_PASSWORD"
+xcrun altool --notarization-info <RequestUUID> -u "its@gemini.edu" -p "@keychain:AC_PASSWORD"
 ``````
 
 A final step of stapling the dmg is possible (though not required) to let users without internet open the app
