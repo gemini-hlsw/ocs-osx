@@ -89,10 +89,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
             version.value,
             version.value,
             mainClass.value.getOrElse(sys.error("Sbt main class required")),
-            Map.empty,
-            Seq.empty,
-            Some(iconFile),
-            ""
+            Some(iconFile)
           )
           pList.write(new File(contentPath, "Info.plist").getAbsolutePath)
           log.info(pList.xml.toString)

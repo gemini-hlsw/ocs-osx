@@ -15,10 +15,7 @@ case class InfoPlist(
   version:      String,
   shortVersion: String,
   mainClass:    String,
-  props:        Map[String, String],
-  vmOpts:       Seq[String],
   icon:         Option[File],
-  jreDir:       String
 ) {
 
   def xml =
@@ -26,10 +23,10 @@ case class InfoPlist(
       <dict>
         <key>CFBundleExecutable</key>
         <string>{executable}</string>
-          {
+        {
       icon.map { f =>
         <key>CFBundleIconFile</key>
-              <string>{f.getName}</string>
+        <string>{f.getName}</string>
       }.toList
     }
         <key>CFBundleIdentifier</key>
@@ -46,21 +43,6 @@ case class InfoPlist(
         <string>{shortVersion}</string>
         <key>CFBundleVersion</key>
         <string>{version}</string>
-        <key>JVMOptions</key>
-        <array>
-          {
-      vmOpts.map { x =>
-        <string>{x}</string>
-      }
-    }
-          {
-      props.map {
-        case (k, v) =>
-          <string>{s"-D$k=$v"}</string>
-      }
-    }
-          <string>-Xdock:name={name}</string>
-        </array>
         <key>NSHighResolutionCapable</key>
         <true/>
       </dict>

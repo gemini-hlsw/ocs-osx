@@ -56,6 +56,8 @@ lazy val pit = project
     mappings in Universal ++= (resources in Compile).value.map { r =>
       r -> ("Resources/" + r.getName)
     },
+    bashScriptExtraDefines += s"""addJava "-Xdock:icon=$${app_home}/../Resources/${icon.value}"""",
+    bashScriptExtraDefines += """addJava "-Xdock:name=Gemini PIT"""",
     javaOptions in Universal ++= Seq(
       "-no-version-check",
       "-java-home ${app_home}/../jre/Contents/Home"
