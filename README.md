@@ -38,20 +38,20 @@ Note that the top dir under jre must be `Contents`
 
 This project doesn't use OSGi as it is hard to run OSGi in newer jdks. Instead we do the
 wiring ourselves and launch as a regular Java application. In the case of the PIT, there is a
-PITLauncher bundle that already does most of the wiring, thus in the pit case there is no need
-of extra code and it is enough to just declare `pitlauncher` as a dependency.
+PITLauncher bundle that already does most of the wiring, thus it is enough to just declare `pitlauncher` as a dependency.
 
-Note this assumes all modules have been properly published, either locally or to some public repo.
-All testing has been done with local publication
+This dependency assumes all required ocs modules have been properly published, either locally or
+to some public repo.
+All testing has been done with local publication.
 
 # Code changes
 Given the ocs code is written on jdk 1.8 but runs on jdk 13, there can be code incompatibilities due
 to deprecated code or newer bugs:
 The following have been identified so far:
 
-* Apple custom ui classes (eawt) have been deprecated. They were called via reflection originally thus
+* *Apple custom ui classes (eawt) have been deprecated*. They were called via reflection originally thus
 it is not a real issue
-* Legacy actors: Scala actors won't run on jdks newer than 1.8, the code needs to be rewritten
+* *Legacy actors*: Scala actors won't run on jdks newer than 1.8, the code needs to be rewritten
 
 # Signatures and app passwords
 
@@ -59,16 +59,16 @@ All code need to be signed, you need to import the public key and certificate in
 
 https://github.com/gemini-hlsw/ocs/wiki/Signing-Applications-for-OSX#install-certificate
 
-The certificate is managed by ITS and they can provide a copy if needed
+The certificate is managed by ITS and they can provide a copy if needed (both the private key and the cert are required)
 
 Additionally an app password needs to be on the keychain according to
 
 https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution/customizing_the_notarization_workflow
 
-The password is available at the interal password site
+The password is available at the internal password site
 
 # Packaging
-The project uses sbt-native-packager but it adds a custom format that will build the dmg, sign it and
+The project uses [sbt-native-packager](https://github.com/sbt/sbt-native-packager) but it adds a custom format that will build the dmg, sign it and
 notarize it, it can be called via e.g.
 
 `notarizedDmgFormat:packageBin`
@@ -79,7 +79,7 @@ Mappings and settings can be configured as usual for a Java Application, see:
 
 https://sbt-native-packager.readthedocs.io/en/latest/archetypes/java_app/index.html
 
-Please note that the dock:icon and dock:name require special settings that you can see
+Please note that ``dock:icon`` and ``dock:name`` require special settings that you can see
 on the example for the PIT
 
 Other JVM arguments can be passed as for any java application
@@ -89,7 +89,7 @@ Other JVM arguments can be passed as for any java application
 The task will send the code to be notarized and it will uplooad the code and give a reference UUID like
 
 ``````
-[info] RequestUUID = bb2ba1c8-250c-4059-881c-d478db8b2e42``
+[info] RequestUUID = bb2ba1c8-250c-4059-881c-d478db8b2e42
 ``````
 
 The notarization process takes a few minutes and ideally we'd check this later on with the command
