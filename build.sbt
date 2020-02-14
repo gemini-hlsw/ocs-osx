@@ -26,7 +26,9 @@ lazy val pit = project
     version := "2020102.1.0", // Same version as defined by the pitlauncher bundle
     libraryDependencies ++= Seq(
       "edu.gemini.ocs" %% "edu-gemini-pit-launcher" % version.value,
-      "org.osgi" % "org.osgi.core" % "4.2.0"
+      "org.osgi" % "org.osgi.core" % "4.2.0",
+      "javax.xml.bind" % "jaxb-api" % "2.3.1",
+      "org.glassfish.jaxb" % "jaxb-runtime" % "2.3.1"
     ),
     appName := "Gemini PIT",
     maintainer in Universal := "Gemini Software Group",
