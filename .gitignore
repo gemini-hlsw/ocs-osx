@@ -1,3 +1,5 @@
+*.ipr
+*.iws
 *.class
 *.log
 *.swp
