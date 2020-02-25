@@ -66,7 +66,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
             Paths.get(getClass.getClassLoader.getResource("entitlements.plist").toURI).toFile
           val log = logger.value
           log.info(s"Creating dmg $applicationName $versionY")
-          val fullName = s"$applicationName $versionY"
+          val fullName = s"$applicationName $versionY.app"
           val dmgPath  = new File(t, fullName)
           if (dmg.exists) IO.delete(dmg)
 
