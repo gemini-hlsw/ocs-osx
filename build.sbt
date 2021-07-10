@@ -1,3 +1,4 @@
+
 import NativePackagerHelper._
 
 name in ThisBuild := "ocs-osx"
@@ -5,6 +6,11 @@ name in ThisBuild := "ocs-osx"
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 scalaVersion in ThisBuild := "2.11.11"
+
+lazy val pitVersion = settingKey[OcsVersion]("Version for PIT and its [unshared] bundles.")
+
+// Same version as defined in the OCS top-level build.sbt please.
+pitVersion in ThisBuild := OcsVersion("2020B", true, 2, 1, 0)
 
 organization := "edu.gemini"
 
@@ -23,9 +29,9 @@ lazy val pit = project
   .in(file("pit"))
   .enablePlugins(NotarizedDmgPlugin)
   .settings(
-    version := "2020102.1.0", // Same version as defined by the pitlauncher bundle
+    version := pitVersion.value.toString,
     libraryDependencies ++= Seq(
-      "edu.gemini.ocs"     %% "edu-gemini-pit-launcher" % version.value,
+      "edu.gemini.ocs"     %% "edu-gemini-pit-launcher" % pitVersion.value.toOsgiVersion,
       "org.osgi"           %  "org.osgi.core"           % "4.2.0",
       "javax.xml.bind"     %  "jaxb-api"                % "2.3.1",
       "org.glassfish.jaxb" %  "jaxb-runtime"            % "2.3.1",

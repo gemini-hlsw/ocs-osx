@@ -60,7 +60,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
           val projectName     = name.value.replaceAll(" ", "_")
           val notUID          = notarizationUID.value
           val iconFile        = new File("Resources", icon.value)
-          val dmgName         = s"${projectName}_$versionY"
+          val dmgName         = s"${projectName}_${versionY}_macos"
           val dmg             = new File(t, (dmgName + ".dmg"))
           val entitlements =
             Paths.get(getClass.getClassLoader.getResource("entitlements.plist").toURI).toFile
@@ -128,7 +128,7 @@ object NotarizedDmgPlugin extends AutoPlugin {
             )
           }
 
-          val volname = "%s_%s".format(projectName, versionY)
+          val volname = "%s_%s_macos".format(projectName, versionY)
           val dmgname = volname + ".dmg"
           val dest    = new File(t, dmgname)
           if (dest.exists) IO.delete(dest)
