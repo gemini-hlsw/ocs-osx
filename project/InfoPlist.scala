@@ -4,7 +4,8 @@ import sbt.File
 
 object InfoPlist {
   val extId = PublicID("-//Apple Computer//DTD PLIST 1.0//EN",
-                       "http://www.apple.com/DTDs/PropertyList-1.0.dtd")
+                       "http://www.apple.com/DTDs/PropertyList-1.0.dtd"
+  )
   val docType = DocType("plist", extId, Nil)
 }
 
@@ -15,7 +16,7 @@ case class InfoPlist(
   version:      String,
   shortVersion: String,
   mainClass:    String,
-  icon:         Option[File],
+  icon:         Option[File]
 ) {
 
   def xml =

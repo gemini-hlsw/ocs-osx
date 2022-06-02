@@ -121,7 +121,8 @@ object NotarizedDmgPlugin extends AutoPlugin {
                       "-v",
                       "-s",
                       certHash,
-                      file.toFile.getAbsolutePath).!
+                      file.toFile.getAbsolutePath
+                  ).!
                   FileVisitResult.CONTINUE
                 }
               }
@@ -140,7 +141,8 @@ object NotarizedDmgPlugin extends AutoPlugin {
                          dmgPath.getAbsolutePath,
                          "-volname",
                          volname,
-                         dest.getAbsolutePath)
+                         dest.getAbsolutePath
+          )
           val result = args.!
           if (result != 0) {
             log.error("*** " + args.mkString(" "))
@@ -158,7 +160,8 @@ object NotarizedDmgPlugin extends AutoPlugin {
                 "-v",
                 "-s",
                 certHash,
-                dest.getAbsolutePath).lineStream
+                dest.getAbsolutePath
+            ).lineStream
 
           }
           val notarizeCmd = Seq("xcrun",
@@ -167,7 +170,8 @@ object NotarizedDmgPlugin extends AutoPlugin {
                                 "-u",
                                 notUID,
                                 "-p",
-                                """@keychain:AC_PASSWORD""")
+                                """@keychain:AC_PASSWORD"""
+          )
           val canNotarize = notarizeCmd.lineStream.filter(_.contains("Error")).isEmpty
           if (canNotarize) {
             val notarize = Seq(
